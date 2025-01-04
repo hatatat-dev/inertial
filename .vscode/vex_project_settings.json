@@ -1,0 +1,18 @@
+{
+	"extension": {
+		"version": "0.6.1",
+		"json": 2
+	},
+	"project": {
+		"name": "hs-template",
+		"description": "Template project for High Stakes",
+		"creationDate": "9/27/2024, 6:00:00 PM",
+		"platform": "V5",
+		"language": "python",
+		"slot": 1,
+		"sdkVersion": "V5_1_0_1_25",
+		"python": {
+			"main": "build/preprocessed.py"
+		}
+	}
+}

@@ -1,0 +1,7 @@
+*.sw?
+.DS_Store
+__pycache__
+.vscode/settings.json
+build/
+csvs/*-attempt-*.csv
+csvs/*.attempt

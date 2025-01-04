@@ -1,0 +1,15 @@
+timestamp,thread,cls,name,method,tag,arg_0,arg_1,arg_2,arg_3,arg_4,arg_5,arg_6,arg_7,arg_8,arg_9,arg_10,arg_11,arg_12,arg_13,arg_14,arg_15,arg_16,arg_17,arg_18,arg_19
+11,main,Config,config,CONFIG_ATTEMPT,0
+11,main,Config,config,CONFIG_UTC,1727488080
+11,main,Config,config,CONFIG_DATE,2024-09-27
+11,main,Config,config,CONFIG_TIME,18:48:00
+11,main,Config,config,CONFIG_PROJECT,hs-template
+11,main,Config,config,CONFIG_TELEMETRY_GIT_HASH,011f5cd9f93fa1d048621549d64f989bba6395e0
+11,main,Config,config,CONFIG_PROJECT_GIT_HASH,7f97202d0c84028ce3a570e8d52792312530f391
+11,main,Inertial,inertial,state,,1,0,20,20,0,0,0,20,0,0,0,0,0,0,0
+12,main,Inertial,inertial,calibrate,
+12,main,Inertial,inertial,state,,1,0,20,20,0,0,0,20,0,0,0,0,0,0,0
+12,main,Gps,gps,state,,1,0,20,20,0,0,100,0,0,0,0,0,0,0,0,0,0,0
+12,main,Odometry,odometry,compute_position_with_heading,,0,0,0,20,20,20,0,0
+12,main,Inertial,inertial,set_heading,,20,0
+12,main,Odometry,odometry,reset,,0,0,0,20,20,20,0,0
