@@ -1,35 +1,76 @@
 #!/usr/bin/env -S PYTHONPATH=../telemetry python3
 
+from typing import *
 from telemetry.config_log import *
-from high_stakes.events import *
 
 # Open log based on config
 config_open_log()
 
+# Flush log every 10 seconds
+repeated_event(flush_log, 0, 10000)
 
-def driver_function():
-    """Function for the driver part of a competition match"""
+INERTIAL_PORTS = [Ports.PORT3, Ports.PORT2]
+"""List of ports with inertial sensors"""
 
-    log(("Competition", "competition"), "driver_begin")
+inertials = [Inertial(port) for port in INERTIAL_PORTS]
+"""List of inertial sensors"""
 
-    # Add driver logic here
-    # Note that event handling is initialized outside of this function by init_event_handling()
-
-    log(("Competition", "competition"), "driver_end")
-
-
-def autonomous_function():
-    """Function for the autonomous part of a competition match"""
-
-    log(("Competition", "competition"), "autonomous_begin")
-
-    # Add autonomous logic here
-
-    log(("Competition", "competition"), "autonomous_end")
+origin_rotations: Optional[Tuple[float, ...]] = None
+"""Original rotation values of the inertial sensors at the first sample"""
 
 
-# Initialize event handling
-init_event_handling()
+def sample() -> None:
+    """Sample the inertial sensors and log the relative rotations and orientations"""
+    try:
+        global origin_rotations
 
-# Register the competition functions
-competition = Competition(driver_function, autonomous_function)
+        current_rotations: Tuple[float, ...] = tuple(
+            inertial.rotation() for inertial in inertials
+        )
+
+        if origin_rotations is None:
+            origin_rotations = current_rotations
+
+        relative_rotations = tuple(
+            current - origin
+            for origin, current in zip(origin_rotations, current_rotations)
+        )
+
+        orientations = tuple(
+            orientation
+            for sub in (
+                (
+                    inertial.orientation(OrientationType.ROLL),
+                    inertial.orientation(OrientationType.PITCH),
+                    inertial.orientation(OrientationType.YAW),
+                )
+                for inertial in inertials
+            )
+            for orientation in sub
+        )
+
+        log(
+            ("inertial", "inertial"), "sample", "", *(relative_rotations + orientations)
+        )
+
+    except Exception as e:
+        log(("inertial", "inertial"), "error", str(e))
+
+
+# Calibrate the inertial sensors
+log(("inertial", "inertial"), "calibrate")
+
+for inertial in inertials:
+    inertial.calibrate()
+
+while any(inertial.is_calibrating() for inertial in inertials):
+    sleep(100, TimeUnits.MSEC)
+
+log(("inertial", "inertial"), "run")
+
+brain = Brain()
+
+bumper = Bumper(brain.three_wire_port.a)
+
+# Sample the inertial sensors when the bumper is pressed
+bumper.pressed(sample)
