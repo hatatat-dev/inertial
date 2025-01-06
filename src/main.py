@@ -18,43 +18,60 @@ inertials = [Inertial(port) for port in INERTIAL_PORTS]
 origin_rotations: Optional[Tuple[float, ...]] = None
 """Original rotation values of the inertial sensors at the first sample"""
 
+ROTATION_SNAP_STEP = 90.0
+"""Expect sampling only to happen at these intervals"""
+
+rotation_snap_error: float = 0.0
+"""Current error based on the snapped rotation value"""
+
 
 def sample() -> None:
     """Sample the inertial sensors and log the relative rotations and orientations"""
-    try:
-        global origin_rotations
+    global origin_rotations
+    global rotation_snap_error
 
-        current_rotations: Tuple[float, ...] = tuple(
-            inertial.rotation() for inertial in inertials
-        )
+    current_rotations: Tuple[float, ...] = tuple(
+        inertial.rotation() for inertial in inertials
+    )
 
-        if origin_rotations is None:
-            origin_rotations = current_rotations
+    if origin_rotations is None:
+        # Capture the first rotations as the origin
+        origin_rotations = current_rotations
 
-        relative_rotations = tuple(
-            current - origin
-            for origin, current in zip(origin_rotations, current_rotations)
-        )
+    # Compute the relative rotations since the origin
+    relative_rotations = tuple(
+        current - origin for origin, current in zip(origin_rotations, current_rotations)
+    )
 
-        orientations = tuple(
-            orientation
-            for sub in (
-                (
-                    inertial.orientation(OrientationType.ROLL),
-                    inertial.orientation(OrientationType.PITCH),
-                    inertial.orientation(OrientationType.YAW),
-                )
-                for inertial in inertials
-            )
-            for orientation in sub
-        )
+    # Expect sampling only to happen at these intervals"""
+    snapped_rotation = (
+        round((relative_rotations[0] + rotation_snap_error) / ROTATION_SNAP_STEP)
+        * ROTATION_SNAP_STEP
+    )
 
-        log(
-            ("inertial", "inertial"), "sample", "", *(relative_rotations + orientations)
-        )
+    # Update the error based on the snapped rotation value
+    rotation_snap_error = snapped_rotation - relative_rotations[0]
 
-    except Exception as e:
-        log(("inertial", "inertial"), "error", str(e))
+    # Collect the inertial sensors orientations
+    orientations: List[float] = []
+
+    for inertial in inertials:
+        for orientation in (
+            OrientationType.ROLL,
+            OrientationType.PITCH,
+            OrientationType.YAW,
+        ):
+            orientations.append(inertial.orientation(orientation))
+
+    # Log the rotations, starting with the expected snapped value
+    timestamp = log(
+        ("inertial", "inertial"), "rotations", "", snapped_rotation, *relative_rotations
+    )
+
+    # Log the orientations, with a separate log entry, but with the same timestamp
+    log_with_timestamp(
+        timestamp, ("inertial", "inertial"), "orientations", "", *orientations
+    )
 
 
 # Calibrate the inertial sensors
@@ -74,3 +91,11 @@ bumper = Bumper(brain.three_wire_port.a)
 
 # Sample the inertial sensors when the bumper is pressed
 bumper.pressed(sample)
+
+controller = Controller()
+
+# Also sample the inertial sensors when the A button is pressed
+controller.buttonA.pressed(sample)
+
+# Flush the log when the B button is pressed
+controller.buttonB.pressed(flush_log)
