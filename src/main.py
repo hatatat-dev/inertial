@@ -2,6 +2,7 @@
 
 from typing import *
 from telemetry.config_log import *
+from vex import *
 
 # Open log based on config
 config_open_log()
